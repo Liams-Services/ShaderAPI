@@ -2,7 +2,7 @@ package com.liamxsage.shaderapi.client.config
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.liamxsage.klassicx.extensions.getLogger
+import com.liamxsage.shaderapi.Constants.logger
 import net.minecraft.client.MinecraftClient
 import java.io.File
 
@@ -19,9 +19,9 @@ object ConfigManager {
     fun readConfig() {
         try {
             serverGroups = Gson().fromJson(configFile.readText(), object : TypeToken<List<ServerGroupShaderState>>() {}.type)
-            getLogger().info("Loaded ${serverGroups.size} server groups")
+            logger.info("Loaded ${serverGroups.size} server groups")
         } catch (e: Exception) {
-            getLogger().warn("Failed to read config file", e)
+            logger.warn("Failed to read config file", e)
         }
     }
 
@@ -29,7 +29,7 @@ object ConfigManager {
         try {
             configFile.writeText(Gson().toJson(serverGroups))
         } catch (e: Exception) {
-            getLogger().warn("Failed to save config file", e)
+            logger.warn("Failed to save config file", e)
         }
     }
 

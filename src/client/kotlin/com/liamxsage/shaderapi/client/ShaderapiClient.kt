@@ -1,6 +1,6 @@
 package com.liamxsage.shaderapi.client
 
-import com.liamxsage.klassicx.extensions.getLogger
+import com.liamxsage.shaderapi.Constants.logger
 import com.liamxsage.shaderapi.ShaderReceivePayload
 import com.liamxsage.shaderapi.ShaderRequestPayload
 import com.liamxsage.shaderapi.client.config.ConfigManager
@@ -15,25 +15,25 @@ import net.minecraft.client.network.ClientPlayNetworkHandler
 class ShaderapiClient : ClientModInitializer {
 
     override fun onInitializeClient() {
-        getLogger().info("Initializing ShaderAPI Client")
+        logger.info("Initializing ShaderAPI Client")
 
         // Check for a disabling condition, such as a missing dependency or a config flag
         if (shouldDisableMod()) {
-            getLogger().warn("ShaderAPI Client is disabled.")
+            logger.warn("ShaderAPI Client is disabled.")
             return  // Exit the initialization early
         }
 
         ClientPlayNetworking.registerGlobalReceiver(ShaderReceivePayload.ID, ShaderReceivePayloadHandler())
 
-        getLogger().info("Registering ShaderRequestPayload Receiver")
+        logger.info("Registering ShaderRequestPayload Receiver")
         ClientPlayConnectionEvents.JOIN.register(ClientPlayConnectionEvents.Join { handler: ClientPlayNetworkHandler, sender: PacketSender, client: MinecraftClient ->
-            ClientPlayNetworking.send(ShaderRequestPayload(true)).also { getLogger().info("ShaderRequestPayload sent") }
+            ClientPlayNetworking.send(ShaderRequestPayload(true)).also { logger.info("ShaderRequestPayload sent") }
         })
 
-        getLogger().info("Loading config")
+        logger.info("Loading config")
         ConfigManager.readConfig()
 
-        getLogger().info("ShaderAPI Client initialized")
+        logger.info("ShaderAPI Client initialized")
     }
 
     private fun shouldDisableMod(): Boolean {
@@ -41,7 +41,7 @@ class ShaderapiClient : ClientModInitializer {
         try {
             Class.forName("net.irisshaders.iris.Iris")
         } catch (e: ClassNotFoundException) {
-            getLogger().warn("ShaderAPI Client could not find Iris, disabling")
+            logger.warn("ShaderAPI Client could not find Iris, disabling")
             return true
         }
 

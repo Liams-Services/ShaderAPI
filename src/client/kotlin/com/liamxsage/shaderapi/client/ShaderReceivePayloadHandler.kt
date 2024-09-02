@@ -1,6 +1,6 @@
 package com.liamxsage.shaderapi.client
 
-import com.liamxsage.klassicx.extensions.getLogger
+import com.liamxsage.shaderapi.Constants.logger
 import com.liamxsage.shaderapi.ShaderReceivePayload
 import com.liamxsage.shaderapi.client.config.ConfigManager
 import com.liamxsage.shaderapi.client.config.ShaderPackAcceptState
@@ -16,7 +16,7 @@ import java.util.*
 
 class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<ShaderReceivePayload> {
     override fun receive(payload: ShaderReceivePayload, context: ClientPlayNetworking.Context) {
-        getLogger().info("ShaderReceivePayload received")
+        logger.info("ShaderReceivePayload received")
         val shaderUrl: String = payload.shaderUrl ?: return
         val shaderHash: String = payload.hash ?: return
         val serverGroup: String = payload.serverGroup.ifEmpty { context.player().server?.serverIp ?: "global" }
@@ -66,7 +66,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
 
         // Download the shader pack
         val shaderPackFile: File = downloadShaderPack(url, shaderHash) ?: run {
-            getLogger().warn("Shader Pack Download failed")
+            logger.warn("Shader Pack Download failed")
             return
         }
 
