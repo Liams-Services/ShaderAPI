@@ -19,7 +19,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
         getLogger().info("ShaderReceivePayload received")
         val shaderUrl: String = payload.shaderUrl ?: return
         val shaderHash: String = payload.hash ?: return
-        val serverGroup: String = payload.serverGroup ?: "global"
+        val serverGroup: String = payload.serverGroup.ifEmpty { context.player().server?.serverIp ?: "global" }
 
         if (testForServerGroupAlwaysAccept(serverGroup)) {
             downloadAndApplyShaderPack(shaderUrl, shaderHash)
@@ -49,7 +49,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
 
     private fun testForShaderPack(hash: String): Boolean {
         try {
-            val file = File(MinecraftClient.getInstance().runDirectory, "downloads/$hash")
+            val file = File(MinecraftClient.getInstance().runDirectory, "downloads/$hash.zip")
             return file.exists()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -60,12 +60,12 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
     private fun downloadAndApplyShaderPack(url: String, shaderHash: String) {
 
         if (testForShaderPack(shaderHash)) {
-            applyShaderPack(File(MinecraftClient.getInstance().runDirectory, "downloads/$shaderHash"))
+            applyShaderPack(File(MinecraftClient.getInstance().runDirectory, "downloads/$shaderHash.zip"))
             return
         }
 
         // Download the shader pack
-        val shaderPackFile: File = downloadShaderPack(url) ?: run {
+        val shaderPackFile: File = downloadShaderPack(url, shaderHash) ?: run {
             getLogger().warn("Shader Pack Download failed")
             return
         }
@@ -88,7 +88,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
         }
     }
 
-    private fun downloadShaderPack(url: String): File? {
+    private fun downloadShaderPack(url: String, hash: String): File? {
         // Implementiere den Download des Shaderpacks von der URL und speichere es lokal ab
         // Gib die Datei zurück, wenn der Download erfolgreich war, andernfalls null
         try {
@@ -103,10 +103,9 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
                 }
             }
 
-            val hash = tmpFile.hashCode().toString()
-            val renamed = tmpFile.renameTo(File(minecraftClient.runDirectory, "downloads/$hash"))
+            val renamed = tmpFile.renameTo(File(minecraftClient.runDirectory, "downloads/$hash.zip"))
             return if (renamed) {
-                File(minecraftClient.runDirectory, "downloads/$hash")
+                File(minecraftClient.runDirectory, "downloads/$hash.zip")
             } else {
                 null
             }
