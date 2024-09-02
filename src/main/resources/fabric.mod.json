@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "shaderapi",
+  "version": "${version}",
+  "name": "shaderapi",
+  "description": "AutoGG for Hypixel (and others)",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/shaderapi/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.liamxsage.shaderapi.client.ShaderapiClient"
+    ],
+    "main": [
+      "com.liamxsage.shaderapi.Shaderapi"
+    ]
+  },
+  "mixins": [],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
