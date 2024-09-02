@@ -3,6 +3,7 @@ package com.liamxsage.shaderapi.client
 import com.liamxsage.klassicx.extensions.getLogger
 import com.liamxsage.shaderapi.ShaderReceivePayload
 import com.liamxsage.shaderapi.ShaderRequestPayload
+import com.liamxsage.shaderapi.client.config.ConfigManager
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
@@ -22,12 +23,15 @@ class ShaderapiClient : ClientModInitializer {
             return  // Exit the initialization early
         }
 
-        ClientPlayNetworking.registerGlobalReceiver(ShaderReceivePayload.ID, ShaderReveivePayloadHandler())
+        ClientPlayNetworking.registerGlobalReceiver(ShaderReceivePayload.ID, ShaderReceivePayloadHandler())
 
         getLogger().info("Registering ShaderRequestPayload Receiver")
         ClientPlayConnectionEvents.JOIN.register(ClientPlayConnectionEvents.Join { handler: ClientPlayNetworkHandler, sender: PacketSender, client: MinecraftClient ->
             ClientPlayNetworking.send(ShaderRequestPayload(true)).also { getLogger().info("ShaderRequestPayload sent") }
         })
+
+        getLogger().info("Loading config")
+        ConfigManager.readConfig()
 
         getLogger().info("ShaderAPI Client initialized")
     }

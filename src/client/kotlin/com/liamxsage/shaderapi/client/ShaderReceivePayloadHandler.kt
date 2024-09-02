@@ -2,6 +2,8 @@ package com.liamxsage.shaderapi.client
 
 import com.liamxsage.klassicx.extensions.getLogger
 import com.liamxsage.shaderapi.ShaderReceivePayload
+import com.liamxsage.shaderapi.client.config.ConfigManager
+import com.liamxsage.shaderapi.client.config.ShaderPackAcceptState
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.irisshaders.iris.Iris
 import net.minecraft.client.MinecraftClient
@@ -12,12 +14,17 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.util.*
 
-class ShaderReveivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<ShaderReceivePayload> {
+class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<ShaderReceivePayload> {
     override fun receive(payload: ShaderReceivePayload, context: ClientPlayNetworking.Context) {
         getLogger().info("ShaderReceivePayload received")
         val shaderUrl: String = payload.shaderUrl ?: return
         val shaderHash: String = payload.hash ?: return
         val serverGroup: String = payload.serverGroup ?: "global"
+
+        if (testForServerGroupAlwaysAccept(serverGroup)) {
+            downloadAndApplyShaderPack(shaderUrl, shaderHash)
+            return
+        }
 
         val client = context.client()
         client.execute {
@@ -25,18 +32,19 @@ class ShaderReveivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
                 if (accept) {
                     downloadAndApplyShaderPack(shaderUrl, shaderHash)
                     context.client().setScreen(null)
+                    ConfigManager.addServerGroup(serverGroup, ShaderPackAcceptState.ACCEPT)
                     return@ConfirmScreen
                 }
 
                context.client().setScreen(null)
+                ConfigManager.addServerGroup(serverGroup, ShaderPackAcceptState.DENY)
 
             }, Text.of("Shader Pack Available"), Text.of("Do you want to download and apply the shader pack?")))
         }
     }
 
-    private fun testForServerGroupAlwaysAccept(client: MinecraftClient, serverGroup: String): Boolean {
-        client.currentServerEntry?.resourcePackPolicy
-        return serverGroup == "global"
+    private fun testForServerGroupAlwaysAccept(serverGroup: String): Boolean {
+        return ConfigManager.getShaderPackAcceptState(serverGroup) == ShaderPackAcceptState.ACCEPT
     }
 
     private fun testForShaderPack(hash: String): Boolean {
