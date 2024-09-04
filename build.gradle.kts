@@ -32,6 +32,11 @@ loom {
             sourceSet("client")
         }
     }
+
+    runConfigs.all {
+        ideConfigGenerated(true) // Run configurations are not created for subprojects by default
+        runDir = "../../run" // Use a shared run folder and just create separate worlds
+    }
 }
 
 repositories {
@@ -53,7 +58,8 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
 
-    compileOnly(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+
+    compileOnly(fileTree(mapOf("dir" to "../../libs", "include" to listOf("*.jar"))))
 }
 
 tasks.processResources {
@@ -103,6 +109,13 @@ tasks {
 configure<SourceSetContainer> {
     named("main") {
         java.srcDir("src/main/kotlin")
+    }
+}
+
+if (stonecutter.current.isActive) {
+    rootProject.tasks.register("buildActive") {
+        group = "project"
+        dependsOn(tasks.named("build"))
     }
 }
 

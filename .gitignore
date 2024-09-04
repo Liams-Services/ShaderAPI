@@ -2,6 +2,7 @@
 .gradle
 **/build/
 !src/**/build/
+!gradle/wrapper/gradle-wrapper.jar
 
 ### Fabric ###
 # Minecraft client/server files
@@ -86,6 +87,9 @@ fabric.properties
 
 ### Kotlin ###
 # Compiled class file
+
+### Libs ###
+!libs/*
 
 # Log file
 
