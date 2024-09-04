@@ -2,6 +2,7 @@
 .gradle
 **/build/
 !src/**/build/
+!gradle/wrapper/gradle-wrapper.jar
 
 ### Fabric ###
 # Minecraft client/server files
