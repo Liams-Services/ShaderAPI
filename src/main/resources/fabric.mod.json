@@ -3,7 +3,7 @@
   "id": "shaderapi",
   "version": "${version}",
   "name": "shaderapi",
-  "description": "AutoGG for Hypixel (and others)",
+  "description": "Let servers send you shader packs.",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
