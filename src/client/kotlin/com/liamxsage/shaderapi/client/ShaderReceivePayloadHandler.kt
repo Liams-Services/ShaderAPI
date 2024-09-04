@@ -4,6 +4,7 @@ import com.liamxsage.shaderapi.Constants.logger
 import com.liamxsage.shaderapi.ShaderReceivePayload
 import com.liamxsage.shaderapi.client.config.ConfigManager
 import com.liamxsage.shaderapi.client.config.ShaderPackAcceptState
+import com.liamxsage.shaderapi.client.functions.sendShaderStatusResponse
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.irisshaders.iris.Iris
 import net.minecraft.client.MinecraftClient
@@ -13,6 +14,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
 import java.util.*
+import kotlin.reflect.jvm.jvmName
 
 class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<ShaderReceivePayload> {
     override fun receive(payload: ShaderReceivePayload, context: ClientPlayNetworking.Context) {
@@ -36,8 +38,9 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
                     return@ConfirmScreen
                 }
 
-               context.client().setScreen(null)
+                context.client().setScreen(null)
                 ConfigManager.addServerGroup(serverGroup, ShaderPackAcceptState.DENY)
+                sendShaderStatusResponse(ShaderStatusResponse.DENIED)
 
             }, Text.of("Shader Pack Available"), Text.of("Do you want to download and apply the shader pack?")))
         }
@@ -51,8 +54,9 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
         try {
             val file = File(MinecraftClient.getInstance().runDirectory, "downloads/$hash.zip")
             return file.exists()
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+            sendShaderStatusResponse(exception::class.jvmName.uppercase())
         }
         return false
     }
@@ -67,6 +71,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
         // Download the shader pack
         val shaderPackFile: File = downloadShaderPack(url, shaderHash) ?: run {
             logger.warn("Shader Pack Download failed")
+            sendShaderStatusResponse(ShaderStatusResponse.DOWNLOAD_FAILED)
             return
         }
 
@@ -82,8 +87,10 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
                 Iris.getIrisConfig().setShadersEnabled(true)
                 Iris.getIrisConfig().save()
                 Iris.reload()
+                sendShaderStatusResponse(ShaderStatusResponse.SUCCESS)
             } catch (exception: Exception) {
                 exception.printStackTrace()
+                sendShaderStatusResponse(ShaderStatusResponse.APPLY_FAILED)
             }
         }
     }
@@ -107,10 +114,12 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
             return if (renamed) {
                 File(minecraftClient.runDirectory, "downloads/$hash.zip")
             } else {
+                sendShaderStatusResponse(ShaderStatusResponse.IO_EXCEPTION)
                 null
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+            sendShaderStatusResponse(exception::class.jvmName.uppercase())
         }
         return null
     }
