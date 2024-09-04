@@ -12,5 +12,8 @@ object Constants {
     val RECEIVE_SHADER_PACKET_ID: Identifier = Identifier.of("shaderapi", "receive_shader_url")
 
     @JvmStatic
+    val STATUS_RESPONSE_PACKET_ID: Identifier = Identifier.of("shaderapi", "status_response")
+
+    @JvmStatic
     val logger: Logger = LoggerFactory.getLogger(Shaderapi::class.java)
 }
