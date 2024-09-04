@@ -88,6 +88,9 @@ fabric.properties
 ### Kotlin ###
 # Compiled class file
 
+### Libs ###
+!libs/*
+
 # Log file
 
 # BlueJ files
