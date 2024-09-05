@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.*
 
 plugins {
     kotlin("jvm") version "2.0.20"
@@ -7,7 +8,11 @@ plugins {
     id("maven-publish")
 }
 
-version = project.property("mod_version") as String
+val dailyVersion = Calendar.getInstance(TimeZone.getTimeZone("Europe/Berlin")).run {
+    "${get(Calendar.YEAR)}.${get(Calendar.MONTH) + 1}.${get(Calendar.DAY_OF_MONTH)}"
+}
+
+version = dailyVersion + "-" + project.property("minecraft_version") as String
 group = project.property("maven_group") as String
 
 base {
