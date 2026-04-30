@@ -1,22 +1,22 @@
 package com.liamxsage.shaderapi;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 
-public record ShaderReceivePayload(String shaderUrl, String hash, String serverGroup) implements CustomPayload {
+public record ShaderReceivePayload(String shaderUrl, String hash, String serverGroup) implements CustomPacketPayload {
 
-    public static final Id<ShaderReceivePayload> ID = new Id<>(Constants.getRECEIVE_SHADER_PACKET_ID());
-    public static final PacketCodec<RegistryByteBuf, ShaderReceivePayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.STRING, ShaderReceivePayload::shaderUrl,
-            PacketCodecs.STRING, ShaderReceivePayload::hash,
-            PacketCodecs.STRING, ShaderReceivePayload::serverGroup,
+    public static final Type<ShaderReceivePayload> ID = new Type<>(Constants.getRECEIVE_SHADER_PACKET_ID());
+    public static final StreamCodec<RegistryFriendlyByteBuf, ShaderReceivePayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8, ShaderReceivePayload::shaderUrl,
+            ByteBufCodecs.STRING_UTF8, ShaderReceivePayload::hash,
+            ByteBufCodecs.STRING_UTF8, ShaderReceivePayload::serverGroup,
             ShaderReceivePayload::new);
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

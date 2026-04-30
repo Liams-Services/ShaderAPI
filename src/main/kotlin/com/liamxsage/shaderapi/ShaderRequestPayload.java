@@ -1,17 +1,17 @@
 package com.liamxsage.shaderapi;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 
-public record ShaderRequestPayload(boolean alwaysTrue) implements CustomPayload {
-    public static final CustomPayload.Id<ShaderRequestPayload> ID = new CustomPayload.Id<>(Constants.getREQUEST_SHADER_PACKET_ID());
-    public static final PacketCodec<RegistryByteBuf, ShaderRequestPayload> CODEC = PacketCodec.tuple(PacketCodecs.BOOL, ShaderRequestPayload::alwaysTrue, ShaderRequestPayload::new);
+public record ShaderRequestPayload(boolean alwaysTrue) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ShaderRequestPayload> ID = new CustomPacketPayload.Type<>(Constants.getREQUEST_SHADER_PACKET_ID());
+    public static final StreamCodec<RegistryFriendlyByteBuf, ShaderRequestPayload> CODEC = StreamCodec.composite(ByteBufCodecs.BOOL, ShaderRequestPayload::alwaysTrue, ShaderRequestPayload::new);
 
     @Override
-    public CustomPayload.Id<? extends CustomPayload> getId() {
+    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

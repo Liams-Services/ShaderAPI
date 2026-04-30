@@ -1,20 +1,20 @@
 package com.liamxsage.shaderapi;
 
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 
-public record ShaderStatusResponsePayload(String statusResponse) implements CustomPayload {
+public record ShaderStatusResponsePayload(String statusResponse) implements CustomPacketPayload {
 
-    public static final Id<ShaderStatusResponsePayload> ID = new Id<>(Constants.getSTATUS_RESPONSE_PACKET_ID());
-    public static final PacketCodec<RegistryByteBuf, ShaderStatusResponsePayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.STRING, ShaderStatusResponsePayload::statusResponse,
+    public static final Type<ShaderStatusResponsePayload> ID = new Type<>(Constants.getSTATUS_RESPONSE_PACKET_ID());
+    public static final StreamCodec<RegistryFriendlyByteBuf, ShaderStatusResponsePayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8, ShaderStatusResponsePayload::statusResponse,
             ShaderStatusResponsePayload::new);
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

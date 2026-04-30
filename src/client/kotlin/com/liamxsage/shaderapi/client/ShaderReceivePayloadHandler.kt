@@ -6,10 +6,9 @@ import com.liamxsage.shaderapi.client.config.ConfigManager
 import com.liamxsage.shaderapi.client.config.ShaderPackAcceptState
 import com.liamxsage.shaderapi.client.functions.sendShaderStatusResponse
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
-import net.irisshaders.iris.Iris
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.gui.screen.ConfirmScreen
-import net.minecraft.text.Text
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.screens.ConfirmScreen
+import net.minecraft.network.chat.Component
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
@@ -21,7 +20,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
         logger.info("ShaderReceivePayload received")
         val shaderUrl: String = payload.shaderUrl ?: return
         val shaderHash: String = payload.hash ?: return
-        val serverGroup: String = payload.serverGroup.ifEmpty { context.player().server?.serverIp ?: "global" }
+        val serverGroup: String = payload.serverGroup.ifEmpty { "global" }
 
         if (testForServerGroupAlwaysAccept(serverGroup)) {
             downloadAndApplyShaderPack(shaderUrl, shaderHash)
@@ -42,7 +41,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
                 ConfigManager.addServerGroup(serverGroup, ShaderPackAcceptState.DENY)
                 sendShaderStatusResponse(ShaderStatusResponse.DENIED)
 
-            }, Text.of("Shader Pack Available"), Text.of("Do you want to download and apply the shader pack?")))
+            }, Component.literal("Shader Pack Available"), Component.literal("Do you want to download and apply the shader pack?")))
         }
     }
 
@@ -52,7 +51,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
 
     private fun testForShaderPack(hash: String): Boolean {
         try {
-            val file = File(MinecraftClient.getInstance().runDirectory, "downloads/$hash.zip")
+            val file = File(Minecraft.getInstance().gameDirectory, "downloads/$hash.zip")
             return file.exists()
         } catch (exception: Exception) {
             exception.printStackTrace()
@@ -64,7 +63,7 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
     private fun downloadAndApplyShaderPack(url: String, shaderHash: String) {
 
         if (testForShaderPack(shaderHash)) {
-            applyShaderPack(File(MinecraftClient.getInstance().runDirectory, "downloads/$shaderHash.zip"))
+            applyShaderPack(File(Minecraft.getInstance().gameDirectory, "downloads/$shaderHash.zip"))
             return
         }
 
@@ -81,12 +80,17 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
     }
 
     private fun applyShaderPack(shaderPackFile: File) {
-        if (!Iris.getIrisConfig().areShadersEnabled() || !Iris.getCurrentPackName().equals(shaderPackFile.getName(), true)) {
+        if (!IrisBridge.isPresent()) {
+            sendShaderStatusResponse(ShaderStatusResponse.APPLY_FAILED)
+            return
+        }
+
+        if (!IrisBridge.areShadersEnabled() || !IrisBridge.currentPackName().equals(shaderPackFile.name, true)) {
             try {
-                Iris.getIrisConfig().setShaderPackName("../downloads/${shaderPackFile.getName()}")
-                Iris.getIrisConfig().setShadersEnabled(true)
-                Iris.getIrisConfig().save()
-                Iris.reload()
+                IrisBridge.setShaderPackName("../downloads/${shaderPackFile.name}")
+                IrisBridge.setShadersEnabled(true)
+                IrisBridge.saveConfig()
+                IrisBridge.reload()
                 sendShaderStatusResponse(ShaderStatusResponse.SUCCESS)
             } catch (exception: Exception) {
                 exception.printStackTrace()
@@ -99,9 +103,9 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
         // Implementiere den Download des Shaderpacks von der URL und speichere es lokal ab
         // Gib die Datei zurück, wenn der Download erfolgreich war, andernfalls null
         try {
-            val minecraftClient = MinecraftClient.getInstance()
+            val minecraftClient = Minecraft.getInstance()
             val tempUUID = UUID.randomUUID()
-            val tmpFile = File(minecraftClient.runDirectory, "downloads/$tempUUID")
+            val tmpFile = File(minecraftClient.gameDirectory, "downloads/$tempUUID")
             val urlConnection = URI(url).toURL().openConnection() as HttpURLConnection
             urlConnection.connect()
             urlConnection.inputStream.use { inputStream ->
@@ -110,9 +114,9 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
                 }
             }
 
-            val renamed = tmpFile.renameTo(File(minecraftClient.runDirectory, "downloads/$hash.zip"))
+            val renamed = tmpFile.renameTo(File(minecraftClient.gameDirectory, "downloads/$hash.zip"))
             return if (renamed) {
-                File(minecraftClient.runDirectory, "downloads/$hash.zip")
+                File(minecraftClient.gameDirectory, "downloads/$hash.zip")
             } else {
                 sendShaderStatusResponse(ShaderStatusResponse.IO_EXCEPTION)
                 null
@@ -122,5 +126,49 @@ class ShaderReceivePayloadHandler : ClientPlayNetworking.PlayPayloadHandler<Shad
             sendShaderStatusResponse(exception::class.jvmName.uppercase())
         }
         return null
+    }
+}
+
+private object IrisBridge {
+    private val irisClass by lazy { Class.forName("net.irisshaders.iris.Iris") }
+    private val getIrisConfigMethod by lazy { irisClass.getMethod("getIrisConfig") }
+    private val getCurrentPackNameMethod by lazy { irisClass.getMethod("getCurrentPackName") }
+    private val reloadMethod by lazy { irisClass.getMethod("reload") }
+
+    private fun irisConfig(): Any = getIrisConfigMethod.invoke(null)
+
+    fun isPresent(): Boolean = try {
+        irisClass
+        true
+    } catch (_: Exception) {
+        false
+    }
+
+    fun areShadersEnabled(): Boolean {
+        val config = irisConfig()
+        return config.javaClass.getMethod("areShadersEnabled").invoke(config) as Boolean
+    }
+
+    fun currentPackName(): String {
+        return getCurrentPackNameMethod.invoke(null) as? String ?: ""
+    }
+
+    fun setShaderPackName(name: String) {
+        val config = irisConfig()
+        config.javaClass.getMethod("setShaderPackName", String::class.java).invoke(config, name)
+    }
+
+    fun setShadersEnabled(enabled: Boolean) {
+        val config = irisConfig()
+        config.javaClass.getMethod("setShadersEnabled", java.lang.Boolean.TYPE).invoke(config, enabled)
+    }
+
+    fun saveConfig() {
+        val config = irisConfig()
+        config.javaClass.getMethod("save").invoke(config)
+    }
+
+    fun reload() {
+        reloadMethod.invoke(null)
     }
 }

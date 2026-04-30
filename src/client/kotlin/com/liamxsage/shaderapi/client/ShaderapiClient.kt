@@ -8,8 +8,8 @@ import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.networking.v1.PacketSender
-import net.minecraft.client.MinecraftClient
-import net.minecraft.client.network.ClientPlayNetworkHandler
+import net.minecraft.client.Minecraft
+import net.minecraft.client.multiplayer.ClientPacketListener
 
 
 class ShaderapiClient : ClientModInitializer {
@@ -26,7 +26,7 @@ class ShaderapiClient : ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(ShaderReceivePayload.ID, ShaderReceivePayloadHandler())
 
         logger.info("Registering ShaderRequestPayload Receiver")
-        ClientPlayConnectionEvents.JOIN.register(ClientPlayConnectionEvents.Join { handler: ClientPlayNetworkHandler, sender: PacketSender, client: MinecraftClient ->
+        ClientPlayConnectionEvents.JOIN.register(ClientPlayConnectionEvents.Join { handler: ClientPacketListener, sender: PacketSender, client: Minecraft ->
             ClientPlayNetworking.send(ShaderRequestPayload(true)).also { logger.info("ShaderRequestPayload sent") }
         })
 

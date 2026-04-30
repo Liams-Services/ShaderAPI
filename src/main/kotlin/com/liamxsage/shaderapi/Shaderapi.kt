@@ -11,11 +11,11 @@ class Shaderapi : ModInitializer {
         logger.info("Initializing ShaderAPI")
 
         // Client 2 Server
-        PayloadTypeRegistry.playC2S().register(ShaderRequestPayload.ID, ShaderRequestPayload.CODEC)
-        PayloadTypeRegistry.playC2S().register(ShaderStatusResponsePayload.ID, ShaderStatusResponsePayload.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(ShaderRequestPayload.ID, ShaderRequestPayload.CODEC)
+        PayloadTypeRegistry.serverboundPlay().register(ShaderStatusResponsePayload.ID, ShaderStatusResponsePayload.CODEC)
 
         // Server 2 Client
-        PayloadTypeRegistry.playS2C().register(ShaderReceivePayload.ID, ShaderReceivePayload.CODEC)
+        PayloadTypeRegistry.clientboundPlay().register(ShaderReceivePayload.ID, ShaderReceivePayload.CODEC)
 
         logger.info("ShaderAPI initialized")
     }

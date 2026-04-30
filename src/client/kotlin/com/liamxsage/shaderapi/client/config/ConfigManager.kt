@@ -3,12 +3,12 @@ package com.liamxsage.shaderapi.client.config
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.liamxsage.shaderapi.Constants.logger
-import net.minecraft.client.MinecraftClient
+import net.minecraft.client.Minecraft
 import java.io.File
 
 object ConfigManager {
 
-    private val configFile = File(MinecraftClient.getInstance().runDirectory, "config/shaderapi.json").also {
+    private val configFile = File(Minecraft.getInstance().gameDirectory, "config/shaderapi.json").also {
         if (!it.exists()) {
             it.createNewFile()
             it.writeText(Gson().toJson(emptyList<ServerGroupShaderState>()))

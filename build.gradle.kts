@@ -1,10 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
 plugins {
-    kotlin("jvm") version "2.0.20"
-    id("fabric-loom") version "1.7.1"
+    kotlin("jvm") version "2.3.20"
+    id("net.fabricmc.fabric-loom") version "1.15.5"
     id("maven-publish")
 }
 
@@ -19,7 +20,7 @@ base {
     archivesName.set(project.property("archives_base_name") as String)
 }
 
-val targetJavaVersion = 21
+val targetJavaVersion = 25
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
@@ -40,7 +41,7 @@ loom {
 
     runConfigs.all {
         ideConfigGenerated(true) // Run configurations are not created for subprojects by default
-        runDir = "../../run" // Use a shared run folder and just create separate worlds
+        runDir = "run"
     }
 }
 
@@ -50,21 +51,24 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
-    maven("https://nexus.flawcra.cc/repository/maven-mirrors/")
+    maven("https://api.modrinth.com/maven")
+    maven("https://repo-api.modlabs.cc/repo/maven/maven-mirror/") {
+        // Keep existing custom mirror configured, but avoid lookup stalls when host is unavailable.
+        content {
+            includeGroup("mirror.unused")
+        }
+    }
 }
 
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
-    mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
-    modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
-    modImplementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
+    implementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
+    implementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+    implementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
 
-
-    compileOnly(fileTree(mapOf("dir" to "../../libs", "include" to listOf("*.jar"))))
 }
 
 tasks.processResources {
@@ -76,9 +80,9 @@ tasks.processResources {
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
-            "minecraft_version" to project.property("minecraft_version"),
-            "loader_version" to project.property("loader_version"),
-            "kotlin_loader_version" to project.property("kotlin_loader_version")
+            "minecraft_version" to (project.property("minecraft_version") as String),
+            "loader_version" to (project.property("loader_version") as String),
+            "kotlin_loader_version" to (project.property("kotlin_loader_version") as String)
         )
     }
 }
@@ -93,7 +97,9 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(targetJavaVersion.toString()))
+    // Temporary: Kotlin JVM target 25 may lag; keep Java on 25 and downgrade Kotlin bytecode target.
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_24)
+    jvmTargetValidationMode.set(JvmTargetValidationMode.WARNING)
 }
 
 tasks.jar {
@@ -107,20 +113,13 @@ tasks {
         source = fileTree("src/main/java")
         classpath = files(configurations.runtimeClasspath)
         destinationDirectory.set(file("build/classes/kotlin/main"))
-        options.release.set(21)
+        options.release.set(targetJavaVersion)
     }
 }
 
 configure<SourceSetContainer> {
     named("main") {
         java.srcDir("src/main/kotlin")
-    }
-}
-
-if (stonecutter.current.isActive) {
-    rootProject.tasks.register("buildActive") {
-        group = "project"
-        dependsOn(tasks.named("build"))
     }
 }
 
